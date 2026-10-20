@@ -27,7 +27,14 @@ public sealed class ClientsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ClientResponse>>> Search([FromQuery] string? name, [FromQuery] string? phone, [FromQuery] string? passport, [FromQuery] DateOnly? bornFrom, [FromQuery] DateOnly? bornTo, CancellationToken token) => Ok(await _service.SearchResponsesAsync(new ClientFilter(name, phone, passport, bornFrom, bornTo), token));
+    public async Task<ActionResult<IReadOnlyList<ClientResponse>>> Search(
+        [FromQuery] string? name, [FromQuery] string? phone, [FromQuery] string? passport,
+        [FromQuery] DateOnly? bornFrom, [FromQuery] DateOnly? bornTo, CancellationToken token)
+    {
+        var filter = new ClientFilter(name, phone, passport, bornFrom, bornTo);
+        IReadOnlyList<ClientResponse> clients = await _service.SearchResponsesAsync(filter, token);
+        return Ok(clients);
+    }
     [HttpPost]
     public async Task<ActionResult<ClientResponse>> Create(ClientRequest request, CancellationToken token)
     {
@@ -73,7 +80,14 @@ public sealed class EmployeesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<EmployeeResponse>>> GetAll([FromQuery] string? name, [FromQuery] string? phone, [FromQuery] string? passport, [FromQuery] DateOnly? bornFrom, [FromQuery] DateOnly? bornTo, CancellationToken token) => Ok(await _service.SearchResponsesAsync(new ClientFilter(name, phone, passport, bornFrom, bornTo), token));
+    public async Task<ActionResult<IReadOnlyList<EmployeeResponse>>> GetAll(
+        [FromQuery] string? name, [FromQuery] string? phone, [FromQuery] string? passport,
+        [FromQuery] DateOnly? bornFrom, [FromQuery] DateOnly? bornTo, CancellationToken token)
+    {
+        var filter = new ClientFilter(name, phone, passport, bornFrom, bornTo);
+        IReadOnlyList<EmployeeResponse> employees = await _service.SearchResponsesAsync(filter, token);
+        return Ok(employees);
+    }
     [HttpPost]
     public async Task<ActionResult<EmployeeResponse>> Create(EmployeeRequest request, CancellationToken token)
     {

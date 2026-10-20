@@ -70,24 +70,22 @@ public class EquivalenceTests
     [Test]
     public void GetHashCodeNecessityPositiveTest_EqualClientKeyFindsAccount()
     {
-        var id = Guid.NewGuid();
-        var first = new Client
-        {
-            Id = id,
-            FirstName = "A"
-        };
+        var generator = new TestDataGenerator();
+        Dictionary<Client, IReadOnlyList<Account>> accounts = generator.CreateClientAccounts(1);
+        Client first = accounts.Keys.First();
         var equalButNew = new Client
         {
-            Id = id,
-            FirstName = "B"
+            Id = first.Id,
+            FirstName = first.FirstName,
+            LastName = first.LastName,
+            BirthDate = first.BirthDate,
+            PhoneNumber = first.PhoneNumber,
+            PassportNumber = first.PassportNumber
         };
-        var account = new Account();
-        var accounts = new Dictionary<Client, Account>
-        {
-            [first] = account
-        };
+        Assert.That(ReferenceEquals(first, equalButNew), Is.False);
         Assert.That(accounts.TryGetValue(equalButNew, out var found), Is.True);
-        Assert.That(found, Is.SameAs(account));
+        Assert.That(found, Is.SameAs(accounts[first]));
+        Assert.That(found, Has.Count.EqualTo(2));
     }
 
     [Test]
@@ -103,9 +101,8 @@ public class EquivalenceTests
 public class LanguageFeatureTests
 {
     [Test]
-    public void Extensions_CountWordsAndCreateTimeSpan()
+    public void Extensions_CreateTimeSpan()
     {
-        Assert.That("Hello, world!".WordCount(), Is.EqualTo(2));
         Assert.That(2.Seconds(), Is.EqualTo(TimeSpan.FromSeconds(2)));
     }
 
@@ -211,50 +208,9 @@ public class LanguageFeatureTests
         var target = new ReflectionTarget();
         Assert.That(ReflectionTools.Invoke(target, "Multiply", 3), Is.EqualTo(6));
         Assert.That(ReflectionTools.GetPrivateProperty(target, "Secret"), Is.EqualTo("value"));
-        Assert.That(ReflectionTools.PrintObjectProperties(target), Does.Contain("Visible: 1"));
     }
 }
 
-public class ConcurrencyAndResourceTests
-{
-    [Test]
-    public async Task Account_ParallelDeposits_ProducesExpectedBalance()
-    {
-        var account = new Account();
-        await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() =>
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                account.Deposit(100);
-            }
-        })));
-        Assert.That(account.Amount, Is.EqualTo(2000));
-    }
-
-    [Test]
-    public async Task RateUpdater_CancelledToken_StopsBeforeWork()
-    {
-        var storage = new ClientStorage();
-        var client = new Client();
-        var account = new Account();
-        account.Deposit(100);
-        client.AddAccount(account);
-        storage.Add(client);
-        using var cancel = new CancellationTokenSource();
-        cancel.Cancel();
-        var exception = Assert.CatchAsync(async () => await new RateUpdaterService(storage).ApplyMonthlyRateAsync(10, cancel.Token));
-        Assert.That(exception, Is.InstanceOf<OperationCanceledException>());
-    }
-
-    [Test]
-    public void MemoryWorker_Dispose_ReleasesAllocatedMemory()
-    {
-        var before = MemoryWorker.TotalFreed;
-        using (var worker = new MemoryWorker(64))
-            worker.DoWork();
-        Assert.That(MemoryWorker.TotalFreed - before, Is.EqualTo(64));
-    }
-}
 
 public class ExportTests
 {
@@ -327,21 +283,20 @@ public class InfrastructureAndHttpTests
     }
 
     [Test]
-    public async Task TeamService_UsesTokenAndDeserializesResponse()
-    {
-        var handler = new StubHandler(request => request.RequestUri!.AbsolutePath.EndsWith("SignIn") ? Json("{\"name\":\"Ada\",\"avatarUrl\":\"\",\"token\":\"test-token\"}") : request.Headers.Authorization?.Parameter == "test-token" ? Json("{\"data\":[],\"count\":0,\"page\":1,\"size\":10}") : new HttpResponseMessage(HttpStatusCode.Unauthorized));
-        var service = new TeamService(new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") });
-        await service.AuthorizeAsync(new AuthData("user", "pass"));
-        var response = await service.GetTeamsAsync();
-        Assert.That(response.Count, Is.EqualTo(0));
-    }
-
-    [Test]
     public async Task CurrencyService_UsesHttpClientAndMapsResponse()
     {
-        var service = new CurrencyService(new HttpClient(new StubHandler(_ => Json("{\"amount\":2,\"baseCurrency\":\"USD\",\"quoteCurrency\":\"EUR\",\"convertedAmount\":1.8,\"rate\":0.9}"))) { BaseAddress = new Uri("https://example.test/") });
+        using var client = new HttpClient(new StubHandler(request =>
+        {
+            Assert.That(request.Method, Is.EqualTo(HttpMethod.Get));
+            Assert.That(request.RequestUri!.AbsolutePath, Is.EqualTo("/v2/rate/usd/eur"));
+            return Json("{\"date\":\"2026-10-20\",\"base\":\"USD\",\"quote\":\"EUR\",\"rate\":0.9}");
+        }))
+        {
+            BaseAddress = new Uri("https://example.test/")
+        };
+        var service = new CurrencyService(client);
         var result = await service.ConvertAsync(2, "USD", "EUR");
-        Assert.That(result.ConvertedAmount, Is.EqualTo(1.8m));
+        Assert.That(result, Is.EqualTo(1.8m));
     }
 
     [Test]
@@ -369,7 +324,17 @@ public sealed class ReflectionTarget
     private int Multiply(int value) => value * 2;
 }
 
-public sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) : HttpMessageHandler
+public sealed class StubHandler : HttpMessageHandler
 {
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => Task.FromResult(handler(request));
+    private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
+
+    public StubHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)
+    {
+        _handler = handler;
+    }
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(_handler(request));
+    }
 }

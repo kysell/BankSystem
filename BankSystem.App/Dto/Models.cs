@@ -1,23 +1,22 @@
-using System.ComponentModel.DataAnnotations;
 using BankSystem.Domain.Models;
 
 namespace BankSystem.App.Dto;
 
 public sealed record ClientRequest(
-    [Required, StringLength(100)] string FirstName,
-    [Required, StringLength(100)] string LastName,
+    string FirstName,
+    string LastName,
     DateOnly BirthDate,
-    [Required, StringLength(30)] string PhoneNumber,
-    [Required, StringLength(50)] string PassportNumber);
+    string PhoneNumber,
+    string PassportNumber);
 
 public sealed record EmployeeRequest(
-    [Required, StringLength(100)] string FirstName,
-    [Required, StringLength(100)] string LastName,
+    string FirstName,
+    string LastName,
     DateOnly BirthDate,
-    [Required, StringLength(30)] string PhoneNumber,
-    [Required, StringLength(50)] string PassportNumber,
-    [Required, StringLength(100)] string Position,
-    [Range(0, int.MaxValue)] int Salary);
+    string PhoneNumber,
+    string PassportNumber,
+    string Position,
+    int Salary);
 
 public sealed record AccountResponse(Guid Id, string Currency, decimal Amount);
 
@@ -63,5 +62,10 @@ public static class DtoMapping
         return new ClientResponse(client.Id, client.FirstName, client.LastName, client.BirthDate, client.PhoneNumber, client.PassportNumber, accounts);
     }
 
-    public static EmployeeResponse ToResponse(this Employee employee) => new(employee.Id, employee.FirstName, employee.LastName, employee.BirthDate, employee.PhoneNumber, employee.PassportNumber, employee.Position, employee.Salary);
+    public static EmployeeResponse ToResponse(this Employee employee)
+    {
+        return new EmployeeResponse(employee.Id, employee.FirstName, employee.LastName,
+            employee.BirthDate, employee.PhoneNumber, employee.PassportNumber,
+            employee.Position, employee.Salary);
+    }
 }

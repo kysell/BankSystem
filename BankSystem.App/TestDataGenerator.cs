@@ -30,9 +30,45 @@ public sealed class TestDataGenerator
         return clients;
     }
 
-    public List<Client> CreateRandomClients(int count = 1000, int seed = 42) => new Faker<Client>().UseSeed(seed).RuleFor(c => c.Id, f => f.Random.Guid()).RuleFor(c => c.FirstName, f => f.Name.FirstName()).RuleFor(c => c.LastName, f => f.Name.LastName()).RuleFor(c => c.BirthDate, f => DateOnly.FromDateTime(f.Date.Between(new DateTime(1950, 1, 1), new DateTime(2005, 1, 1)))).RuleFor(c => c.PhoneNumber, f => $"+3736{f.IndexFaker:D7}").RuleFor(c => c.PassportNumber, f => f.Random.Guid().ToString("N")).Generate(count);
-    public List<Employee> CreateRandomEmployees(int count = 1000, int seed = 42) => new Faker<Employee>().UseSeed(seed).RuleFor(e => e.Id, f => f.Random.Guid()).RuleFor(e => e.FirstName, f => f.Name.FirstName()).RuleFor(e => e.LastName, f => f.Name.LastName()).RuleFor(e => e.Position, f => f.Name.JobType()).RuleFor(e => e.Salary, f => f.Random.Int(1000, 10000)).RuleFor(e => e.BirthDate, f => DateOnly.FromDateTime(f.Date.Between(new DateTime(1950, 1, 1), new DateTime(2005, 1, 1)))).RuleFor(e => e.PhoneNumber, f => $"+3737{f.IndexFaker:D7}").RuleFor(e => e.PassportNumber, f => f.Random.Guid().ToString("N")).Generate(count);
-    public Dictionary<string, Client> CreateClientsByPhone(int count = 1000) => CreateClients(count).ToDictionary(c => c.PhoneNumber);
+    public List<Client> CreateRandomClients(int count = 1000, int seed = 42)
+    {
+        var generator = new Faker<Client>();
+        generator.UseSeed(seed);
+        generator.RuleFor(client => client.Id, fake => fake.Random.Guid());
+        generator.RuleFor(client => client.FirstName, fake => fake.Name.FirstName());
+        generator.RuleFor(client => client.LastName, fake => fake.Name.LastName());
+        generator.RuleFor(client => client.BirthDate, fake => DateOnly.FromDateTime(
+            fake.Date.Between(new DateTime(1950, 1, 1), new DateTime(2005, 1, 1))));
+        generator.RuleFor(client => client.PhoneNumber, fake => $"+3736{fake.IndexFaker:D7}");
+        generator.RuleFor(client => client.PassportNumber, fake => fake.Random.Guid().ToString("N"));
+        return generator.Generate(count);
+    }
+
+    public List<Employee> CreateRandomEmployees(int count = 1000, int seed = 42)
+    {
+        var generator = new Faker<Employee>();
+        generator.UseSeed(seed);
+        generator.RuleFor(employee => employee.Id, fake => fake.Random.Guid());
+        generator.RuleFor(employee => employee.FirstName, fake => fake.Name.FirstName());
+        generator.RuleFor(employee => employee.LastName, fake => fake.Name.LastName());
+        generator.RuleFor(employee => employee.Position, fake => fake.Name.JobType());
+        generator.RuleFor(employee => employee.Salary, fake => fake.Random.Int(1000, 10000));
+        generator.RuleFor(employee => employee.BirthDate, fake => DateOnly.FromDateTime(
+            fake.Date.Between(new DateTime(1950, 1, 1), new DateTime(2005, 1, 1))));
+        generator.RuleFor(employee => employee.PhoneNumber, fake => $"+3737{fake.IndexFaker:D7}");
+        generator.RuleFor(employee => employee.PassportNumber, fake => fake.Random.Guid().ToString("N"));
+        return generator.Generate(count);
+    }
+
+    public Dictionary<string, Client> CreateClientsByPhone(int count = 1000)
+    {
+        var result = new Dictionary<string, Client>();
+        foreach (Client client in CreateClients(count))
+        {
+            result.Add(client.PhoneNumber, client);
+        }
+        return result;
+    }
     public List<Employee> CreateEmployees(int count = 1000)
     {
         if (count < 0)
@@ -43,7 +79,16 @@ public sealed class TestDataGenerator
         var employees = new List<Employee>();
         for (int number = 1; number <= count; number++)
         {
-            employees.Add(new Employee { FirstName = $"Employee{number}", LastName = "Test", Salary = 1000 + number, Position = "Bank specialist", BirthDate = new DateOnly(1980, 1, 1), PassportNumber = $"E{number}", PhoneNumber = $"+373700{number:D4}" });
+            employees.Add(new Employee
+            {
+                FirstName = $"Employee{number}",
+                LastName = "Test",
+                Salary = 1000 + number,
+                Position = "Bank specialist",
+                BirthDate = new DateOnly(1980, 1, 1),
+                PassportNumber = $"E{number}",
+                PhoneNumber = $"+373700{number:D4}"
+            });
         }
 
         return employees;

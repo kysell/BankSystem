@@ -20,60 +20,21 @@ public static class DelegateExamples
         return result;
     }
 
-    public static int InvokeThenRemove(Action action, Action handler)
+    public static void InvokeThenRemove(Action action, Action handler)
     {
         Action? combined = action + handler;
         combined -= handler;
         combined?.Invoke();
-        return 1;
     }
 }
 
 public static class StringExtensions
 {
-    public static int WordCount(this string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return 0;
-        }
-
-        char[] separators =
-        {
-            ' ',
-            '.',
-            '?',
-            '!'
-        };
-        string[] words = value.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-        return words.Length;
-    }
-
     public static TimeSpan Seconds(this int value) => TimeSpan.FromSeconds(value);
 }
 
 public static class ReflectionTools
 {
-    public static string PrintObjectProperties(object target)
-    {
-        ArgumentNullException.ThrowIfNull(target);
-        Type type = target.GetType();
-        PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-        var descriptions = new List<string>();
-        foreach (PropertyInfo property in properties)
-        {
-            if (property.GetIndexParameters().Length > 0)
-            {
-                continue;
-            }
-
-            object? value = property.GetValue(target);
-            descriptions.Add($"{property.Name}: {value}");
-        }
-
-        return string.Join(", ", descriptions);
-    }
-
     public static object Create(string typeName)
     {
         Type? type = Type.GetType(typeName);
@@ -82,11 +43,6 @@ public static class ReflectionTools
             throw new ArgumentException("Type not found.", nameof(typeName));
         }
 
-        return Create(type);
-    }
-
-    public static object Create(Type type)
-    {
         object? instance = Activator.CreateInstance(type);
         if (instance == null)
         {
@@ -122,11 +78,12 @@ public static class ReflectionTools
     }
 }
 
-public static partial class TextPatterns
+public static class TextPatterns
 {
-    [GeneratedRegex(@"^\d{3}-\d{2}-\d{4}$")]
-    private static partial Regex SsnRegex();
-    public static bool IsSocialSecurityNumber(string value) => SsnRegex().IsMatch(value);
+    public static bool IsSocialSecurityNumber(string value)
+    {
+        return Regex.IsMatch(value, @"^\d{3}-\d{2}-\d{4}$");
+    }
     public static IReadOnlyList<string> FindDuplicateWords(string value)
     {
         MatchCollection matches = Regex.Matches(value, @"\b(\w+)\W+\1\b", RegexOptions.IgnoreCase);

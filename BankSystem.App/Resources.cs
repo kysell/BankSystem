@@ -1,51 +1,8 @@
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using BankSystem.Domain.Models;
 
 namespace BankSystem.App.Services;
-
-public sealed class MemoryWorker : IDisposable
-{
-    private readonly MemoryHandle _handle;
-    private static long _totalAllocated;
-    private static long _totalFreed;
-    public static long TotalAllocated => Interlocked.Read(ref _totalAllocated);
-    public static long TotalFreed => Interlocked.Read(ref _totalFreed);
-
-    public MemoryWorker(int chunkSize)
-    {
-        if (chunkSize < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(chunkSize));
-        }
-
-        _handle = new MemoryHandle(chunkSize);
-        Interlocked.Add(ref _totalAllocated, chunkSize);
-    }
-
-    public void DoWork() => ObjectDisposedException.ThrowIf(_handle.IsClosed, this);
-    public void Dispose() => _handle.Dispose();
-    // SafeHandle освободит память даже тогда, когда вызывающий код забыл Dispose.
-    private sealed class MemoryHandle : SafeHandle
-    {
-        private readonly int _size;
-        public MemoryHandle(int size) : base(IntPtr.Zero, true)
-        {
-            _size = size;
-            SetHandle(Marshal.AllocHGlobal(Math.Max(size, 1)));
-        }
-
-        public override bool IsInvalid => handle == IntPtr.Zero;
-
-        protected override bool ReleaseHandle()
-        {
-            Marshal.FreeHGlobal(handle);
-            Interlocked.Add(ref _totalFreed, _size);
-            return true;
-        }
-    }
-}
 
 public sealed class ClientFilePipeline
 {
@@ -118,12 +75,4 @@ public sealed class ClientFilePipeline
 
         return clients;
     }
-}
-
-public sealed class SimpleCalculator
-{
-    public int GetSum(int a, int b) => checked(a + b);
-    public int GetSubtraction(int a, int b) => checked(a - b);
-    public int GetMultiplication(int a, int b) => checked(a * b);
-    public int GetDivision(int a, int b) => a / b;
 }

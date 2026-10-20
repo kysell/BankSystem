@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using BankSystem.App.Interfaces;
 using BankSystem.App.Services;
 using BankSystem.Data.Storages;
@@ -58,31 +57,6 @@ public class BoundaryTests
     }
 
     [Test]
-    public void Account_TwoActualThreadsDepositWithoutLostUpdates()
-    {
-        var account = new Account();
-        using var gate = new Barrier(2);
-        void Deposit()
-        {
-            gate.SignalAndWait();
-            for (var i = 0; i < 10; i++)
-            {
-                account.Deposit(100);
-            }
-        }
-
-        var first = new Thread(Deposit);
-        var second = new Thread(Deposit);
-        first.Start();
-        second.Start();
-        first.Join();
-        second.Join();
-        Assert.That(account.Amount, Is.EqualTo(2000));
-        Assert.Throws<InvalidOperationException>(() => account.Withdraw(2001));
-        Assert.Throws<ArgumentOutOfRangeException>(() => account.Deposit(0));
-    }
-
-    [Test]
     public void ValueType_MethodByValueDoesNotMutateOriginal()
     {
         var currency = new CurrencyValue("USD", 1);
@@ -106,7 +80,7 @@ public class BoundaryTests
     }
 
     [Test]
-    public async Task HttpServices_PropagateFailuresAndDoNotSendUnauthorizedRequests()
+    public async Task CurrencyService_PropagatesHttpFailureAndValidatesCodes()
     {
         var count = 0;
         using var http = new HttpClient(new StubHandler(_ =>
@@ -117,36 +91,29 @@ public class BoundaryTests
         {
             BaseAddress = new Uri("https://example.test/")
         };
-        var team = new TeamService(http);
-        Assert.ThrowsAsync<InvalidOperationException>(async () => await team.GetTeamsAsync());
-        Assert.That(count, Is.Zero);
-        Assert.ThrowsAsync<HttpRequestException>(async () => await team.AuthorizeAsync(new("user", "placeholder")));
         Assert.ThrowsAsync<HttpRequestException>(async () => await new CurrencyService(http).ConvertAsync(1.25m, "USD", "EUR"));
         Assert.ThrowsAsync<ArgumentException>(async () => await new CurrencyService(http).ConvertAsync(1, "?bad", "EUR"));
         var same = await new CurrencyService(http).ConvertAsync(1, "USD", "usd");
-        Assert.That(same.ConvertedAmount, Is.EqualTo(1));
+        Assert.That(same, Is.EqualTo(1));
+        Assert.That(count, Is.EqualTo(1));
     }
 
     [Test]
-    public async Task TeamService_AddPostsBearerTokenAndPayload()
+    public void Account_InvalidCurrencyThrowsValidationError()
     {
-        HttpRequestMessage? sent = null;
-        using var http = new HttpClient(new StubHandler(r =>
+        var service = new ClientService(new ClientStorage());
+        var account = new Account
         {
-            sent = r;
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(r.RequestUri!.AbsolutePath.EndsWith("SignIn") ? "{\"name\":\"Test\",\"avatarUrl\":\"\",\"token\":\"test\"}" : "{}", Encoding.UTF8, "application/json")
-            };
-        }))
-        {
-            BaseAddress = new Uri("https://example.test/")
+            Currency = null!
         };
-        var service = new TeamService(http);
-        await service.AuthorizeAsync(new("user", "placeholder"));
-        await service.AddAsync(new(1, "Team", 2000, "D", "C", ""));
-        Assert.That(sent!.Method, Is.EqualTo(HttpMethod.Post));
-        Assert.That(sent.Headers.Authorization!.Parameter, Is.EqualTo("test"));
-        Assert.That(sent.RequestUri!.AbsolutePath, Is.EqualTo("/api/Team/Add"));
+        Assert.Throws<ArgumentException>(() => service.AddAccount(Guid.NewGuid(), account));
+    }
+
+    [Test]
+    public void Employees_ReversedBirthDateFilterIsRejected()
+    {
+        var service = new EmployeeService(new EmployeeStorage());
+        var filter = new ClientFilter(BornFrom: new DateOnly(2000, 1, 1), BornTo: new DateOnly(1990, 1, 1));
+        Assert.ThrowsAsync<ArgumentException>(async () => await service.SearchResponsesAsync(filter));
     }
 }

@@ -29,10 +29,27 @@ public sealed class ClientDbStorage : IClientStorage, IDisposable
         return query;
     }
 
-    public IReadOnlyList<Client> Get(Expression<Func<Client, bool>>? filter = null) => CreateQuery(filter).AsNoTracking().ToList();
-    public async Task<IReadOnlyList<Client>> GetAsync(Expression<Func<Client, bool>>? filter = null, CancellationToken token = default) => await CreateQuery(filter).AsNoTracking().ToListAsync(token);
-    public Client? GetById(Guid id) => Query.SingleOrDefault(x => x.Id == id);
-    public Task<Client?> GetByIdAsync(Guid id, CancellationToken token = default) => Query.SingleOrDefaultAsync(x => x.Id == id, token);
+    public IReadOnlyList<Client> Get(Expression<Func<Client, bool>>? filter = null)
+    {
+        IQueryable<Client> query = CreateQuery(filter).AsNoTracking();
+        return query.ToList();
+    }
+
+    public async Task<IReadOnlyList<Client>> GetAsync(Expression<Func<Client, bool>>? filter = null, CancellationToken token = default)
+    {
+        IQueryable<Client> query = CreateQuery(filter).AsNoTracking();
+        return await query.ToListAsync(token);
+    }
+
+    public Client? GetById(Guid id)
+    {
+        return Query.SingleOrDefault(client => client.Id == id);
+    }
+
+    public Task<Client?> GetByIdAsync(Guid id, CancellationToken token = default)
+    {
+        return Query.SingleOrDefaultAsync(client => client.Id == id, token);
+    }
     public void Add(Client item)
     {
         EnsureDefault(item);

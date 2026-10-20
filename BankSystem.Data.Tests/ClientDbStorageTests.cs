@@ -5,12 +5,24 @@ using BankSystem.Data.Storages;
 using BankSystem.Domain.Models;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
-namespace BankSystem.App.Tests;
+namespace BankSystem.Data.Tests;
 
 public class ClientDbStorageTests
 {
+    private static Client Adult(string name = "Ada")
+    {
+        return new Client
+        {
+            FirstName = name,
+            LastName = "Test",
+            BirthDate = new DateOnly(1990, 1, 1),
+            PhoneNumber = "123",
+            PassportNumber = "P123"
+        };
+    }
     private SqliteConnection _connection = null!;
     private BankSystemDbContext _context = null!;
     private ClientDbStorage _storage = null!;
@@ -19,7 +31,12 @@ public class ClientDbStorageTests
     {
         _connection = new SqliteConnection("Data Source=:memory:");
         _connection.Open();
-        _context = new BankSystemDbContext(new DbContextOptionsBuilder<BankSystemDbContext>().UseSqlite(_connection).Options);
+        var options = new DbContextOptionsBuilder<BankSystemDbContext>();
+        options.UseSqlite(_connection);
+        // В задании требуется увидеть SQL, который отправляет EF.
+        options.LogTo(TestContext.Progress.WriteLine,
+            new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information);
+        _context = new BankSystemDbContext(options.Options);
         _context.Database.EnsureCreated();
         _storage = new ClientDbStorage(_context);
     }
@@ -35,7 +52,7 @@ public class ClientDbStorageTests
     [Test]
     public async Task Clients_CrudAndAccountsPersistAcrossTrackingReset()
     {
-        var client = RegressionTests.Adult();
+        var client = Adult();
         await _storage.AddAsync(client);
         _context.ChangeTracker.Clear();
         Assert.That((await _storage.GetByIdAsync(client.Id))!.Accounts.Single().Currency.Code, Is.EqualTo("USD"));
@@ -49,7 +66,7 @@ public class ClientDbStorageTests
         await _storage.WithdrawAsync(client.Id, account.Id, 20);
         _context.ChangeTracker.Clear();
         Assert.That((await _storage.GetByIdAsync(client.Id))!.Accounts.Single(a => a.Id == account.Id).Amount, Is.EqualTo(80));
-        var replacement = RegressionTests.Adult("Changed");
+        var replacement = Adult("Changed");
         replacement = new Client
         {
             Id = client.Id,
@@ -71,8 +88,8 @@ public class ClientDbStorageTests
     [Test]
     public async Task Accounts_RejectCrossClientUpdateAndDelete()
     {
-        var first = RegressionTests.Adult();
-        var second = RegressionTests.Adult("Other");
+        var first = Adult();
+        var second = Adult("Other");
         await _storage.AddAsync(first);
         await _storage.AddAsync(second);
         Assert.ThrowsAsync<KeyNotFoundException>(async () => await _storage.UpdateAccountAsync(first.Id, second.Accounts.Single()));
@@ -86,7 +103,7 @@ public class ClientDbStorageTests
         _context.Accounts.Add(new Account());
         Assert.Throws<DbUpdateException>(() => _context.SaveChanges());
         _context.ChangeTracker.Clear();
-        var client = RegressionTests.Adult();
+        var client = Adult();
         _storage.Add(client);
         Assert.Throws<SqliteException>(() => _context.Database.ExecuteSqlRaw("UPDATE account SET amount = -1"));
     }
@@ -133,7 +150,7 @@ public class ClientDbStorageTests
     [Test]
     public async Task ConcurrentContexts_RejectStaleBalanceWithoutLosingMoney()
     {
-        var client = RegressionTests.Adult();
+        var client = Adult();
         var account = new Account();
         account.Deposit(100);
         client.AddAccount(account);
@@ -156,7 +173,7 @@ public class ClientDbStorageTests
         try
         {
             var exporter = new ExportTool.ExportService();
-            var client = RegressionTests.Adult();
+            var client = Adult();
             await exporter.ExportClientsToCsvAsync([client], path);
             await exporter.ImportClientsIntoStorageAsync(path, new ClientService(_storage));
             _context.ChangeTracker.Clear();
@@ -172,7 +189,7 @@ public class ClientDbStorageTests
     [Test]
     public async Task Interest_UpdatesDetachedAccountsInDatabase()
     {
-        var client = RegressionTests.Adult();
+        var client = Adult();
         var account = new Account();
         account.Deposit(100);
         client.AddAccount(account);

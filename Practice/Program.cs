@@ -18,8 +18,8 @@ if (args.Contains("--currency-smoke"))
     };
     try
     {
-        CurrencyConversion result = await new CurrencyService(http).ConvertAsync(10, "USD", "EUR");
-        Console.WriteLine($"Live CurrencyService: {result.Amount} {result.BaseCurrency} = {result.ConvertedAmount} {result.QuoteCurrency}; rate {result.Rate}");
+        decimal result = await new CurrencyService(http).ConvertAsync(10, "USD", "EUR");
+        Console.WriteLine($"Live CurrencyService: 10 USD = {result} EUR");
     }
     catch (OperationCanceledException)
     {
@@ -46,7 +46,13 @@ var watch = Stopwatch.StartNew();
 var last = phoneIndex.LastOrDefault(p => p.Key == phone).Value;
 watch.Stop();
 Console.WriteLine($"Dictionary.LastOrDefault: {watch.Elapsed.Ticks} ticks; same client: {last == phoneIndex[phone]}");
-Console.WriteLine($"Clients younger than 30: {clients.Count(c => c.Age < 30)}; minimum salary: {employees.MinBy(e => e.Salary)!.Salary}");
+watch.Restart();
+Client byKey = phoneIndex[phone];
+watch.Stop();
+Console.WriteLine($"Dictionary key again: {watch.Elapsed.Ticks} ticks; same client: {last == byKey}");
+List<Client> youngerClients = clients.Where(client => client.Age < 30).ToList();
+Employee lowestPaidEmployee = employees.MinBy(item => item.Salary)!;
+Console.WriteLine($"Clients younger than 30: {youngerClients.Count}; minimum salary: {lowestPaidEmployee.Salary}");
 var bank = new BankService();
 var employee = employees[0];
 employee.Position = "Engineer";
@@ -123,4 +129,3 @@ var storage = new ClientStorage();
 var service = new ClientService(storage);
 await service.AddClientAsync(clients[0]);
 Console.WriteLine($"Added {clients[0].FullName} with default {clients[0].Accounts[0].Currency.Code} account.");
-Console.WriteLine($"Reflection: {ReflectionTools.PrintObjectProperties(bank.ConvertClientToEmployee(clients[0]))}");

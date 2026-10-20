@@ -96,7 +96,6 @@ for bank_attempt in {1..50}; do
   if curl -fsS "http://127.0.0.1:$bank_api_port/openapi/v1.json" -o "$bank_tmp/openapi.json" 2>/dev/null; then break; fi
   sleep .1
 done
-node tools/run-postman.mjs "http://127.0.0.1:$bank_api_port"
 if [ -f tools/node_modules/newman/bin/newman.js ]; then
   node tools/node_modules/newman/bin/newman.js run postman/BankSystem.postman_collection.json \
     -e postman/BankSystem.postman_environment.json --env-var "baseUrl=http://127.0.0.1:$bank_api_port" \
@@ -106,4 +105,4 @@ env BANKSYSTEM_HTTP_TEST_CONNECTION="$ConnectionStrings__BankSystem" \
   dotnet test BankSystem.App.Tests/BankSystem.App.Tests.csproj --no-build --no-restore \
   --filter 'FullyQualifiedName~ApiIntegrationTests' \
   --logger 'trx;LogFileName=PostgreSQL-HTTP.trx' --results-directory "$bank_tmp/test-results"
-echo 'PostgreSQL migrations (up/down/up), SQL, storage and database-backed HTTP checks passed.' 
+echo 'PostgreSQL migrations (up/down/up), SQL, storage and database-backed HTTP checks passed.'

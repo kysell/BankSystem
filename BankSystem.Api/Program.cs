@@ -36,11 +36,6 @@ builder.Services.AddHttpClient<CurrencyService>(client =>
     client.BaseAddress = new Uri("https://api.frankfurter.dev/");
     client.Timeout = TimeSpan.FromSeconds(15);
 });
-builder.Services.AddHttpClient<TeamService>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["TeamApi:BaseUrl"] ?? "https://dev.trainee.dex-it.ru/");
-    client.Timeout = TimeSpan.FromSeconds(15);
-});
 var app = builder.Build();
 app.UseExceptionHandler();
 app.MapOpenApi();

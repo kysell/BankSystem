@@ -2,13 +2,6 @@ using BankSystem.Domain.Models;
 
 namespace BankSystem.App.Services;
 
-public sealed class UnderageClientException : Exception
-{
-    public UnderageClientException(string message) : base(message)
-    {
-    }
-}
-
 public sealed record ClientFilter(string? FullName = null, string? PhoneNumber = null, string? PassportNumber = null, DateOnly? BornFrom = null, DateOnly? BornTo = null);
 public sealed class BankService
 {
@@ -28,11 +21,6 @@ public sealed class BankService
     public void UpdateCurrency(ref CurrencyValue currency, string code, decimal rate)
     {
         currency = new CurrencyValue(code, rate);
-    }
-
-    public void UpdateCurrency(ref Currency currency, string code, decimal rate)
-    {
-        currency = new Currency(code, rate);
     }
 
     public int CalculateOwnersSalary(decimal profit, decimal expenses, IEnumerable<Employee> employees)

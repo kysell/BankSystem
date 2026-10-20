@@ -104,11 +104,6 @@ public sealed class EmployeeService
         return _storage.GetByIdAsync(id, token);
     }
 
-    public Task<IReadOnlyList<Employee>> SearchAsync(string? name = null, CancellationToken token = default)
-    {
-        return _storage.GetAsync(employee => name == null || (employee.FirstName + " " + employee.LastName).Contains(name), token);
-    }
-
     public async Task DeleteAsync(Guid id, CancellationToken token = default)
     {
         Employee? employee = await _storage.GetByIdAsync(id, token);

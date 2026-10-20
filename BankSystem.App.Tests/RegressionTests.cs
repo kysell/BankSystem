@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Threading.Channels;
 using BankSystem.App.Interfaces;
 using BankSystem.App.Services;
 using BankSystem.Data.Storages;
@@ -106,53 +105,6 @@ public class RegressionTests
         }
     }
 
-    [Test]
-    public async Task Pipeline_ChannelInputRotatesByBytesAndRestoresAllAccounts()
-    {
-        var directory = Path.Combine(Path.GetTempPath(), $"pipeline-{Guid.NewGuid()}");
-        try
-        {
-            var clients = Enumerable.Range(0, 10).Select(i => Adult($"Клиент{i}")).ToArray();
-            foreach (var client in clients)
-            {
-                var a = new Account();
-                a.Deposit(10);
-                client.AddAccount(a);
-            }
-
-            var channel = Channel.CreateBounded<Client>(2);
-            var producer = Task.Run(async () =>
-            {
-                foreach (var client in clients)
-                {
-                    await channel.Writer.WriteAsync(client);
-                }
-
-                channel.Writer.Complete();
-            });
-            var pipeline = new ClientFilePipeline();
-            var paths = await pipeline.WriteAsync(channel.Reader.ReadAllAsync(), directory, 1200);
-            await producer;
-            Assert.That(paths.Count, Is.GreaterThan(1));
-            Assert.That(paths.All(p => new FileInfo(p).Length <= 1200), Is.True);
-            var restored = new List<Client>();
-            foreach (var path in paths)
-            {
-                restored.AddRange(await pipeline.ReadAsync(path));
-            }
-
-            Assert.That(restored.Select(c => c.Id), Is.EqualTo(clients.Select(c => c.Id)));
-            Assert.That(restored.All(c => c.Accounts.Single().Amount == 10), Is.True);
-            Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await pipeline.WriteAsync(channel.Reader.ReadAllAsync(), directory, 0));
-        }
-        finally
-        {
-            if (Directory.Exists(directory))
-            {
-                Directory.Delete(directory, true);
-            }
-        }
-    }
 
     [Test]
     public async Task MonthlyInterest_HandlesZeroBalancesAndPersistsInterest()
@@ -248,30 +200,6 @@ public class RegressionTests
         Assert.Throws<MissingMethodException>(() => ReflectionTools.Invoke(target, "Missing"));
     }
 
-    [Test]
-    public void Resource_DisposeTwiceAndExceptionCleanup()
-    {
-        var before = MemoryWorker.TotalFreed;
-        var resource = new MemoryWorker(40);
-        resource.Dispose();
-        resource.Dispose();
-        Assert.Throws<ObjectDisposedException>(resource.DoWork);
-        Assert.That(MemoryWorker.TotalFreed - before, Is.EqualTo(40));
-    }
-
-    [TestCase(2, 5, 7)]
-    [TestCase(-2, 2, 0)]
-    public void Calculator_Sums(int a, int b, int expected) => Assert.That(new SimpleCalculator().GetSum(a, b), Is.EqualTo(expected));
-    [Test]
-    public void Calculator_OperationsAndErrors()
-    {
-        var calculator = new SimpleCalculator();
-        Assert.That(calculator.GetSubtraction(5, 4), Is.EqualTo(1));
-        Assert.That(calculator.GetMultiplication(2, 3), Is.EqualTo(6));
-        Assert.That(calculator.GetDivision(7, 2), Is.EqualTo(3));
-        Assert.Throws<DivideByZeroException>(() => calculator.GetDivision(1, 0));
-        Assert.Throws<OverflowException>(() => calculator.GetSum(int.MaxValue, 1));
-    }
 }
 
 public sealed class ReflectionRegressionTarget

@@ -36,26 +36,28 @@ public sealed class RateUpdaterService
         }
     }
 
-    public async Task RunAsync(decimal ratePercent, TimeProvider? clock = null, CancellationToken token = default)
+    public async Task RunAsync(decimal ratePercent, CancellationToken token = default)
     {
         if (ratePercent < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(ratePercent));
         }
 
-        if (clock == null)
-        {
-            clock = TimeProvider.System;
-        }
-
         while (true)
         {
-            DateTimeOffset now = clock.GetUtcNow();
-            DateTimeOffset firstDayOfMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
-            DateTimeOffset nextMonth = firstDayOfMonth.AddMonths(1);
-            // В тесте часы можно перевести вперёд, не ожидая целый месяц.
-            await Task.Delay(nextMonth - now, clock, token);
+            token.ThrowIfCancellationRequested();
+            TimeSpan delay = TimeUntilNextMonth(DateTimeOffset.UtcNow);
+            await Task.Delay(delay, token);
             await ApplyMonthlyRateAsync(ratePercent, token);
         }
+    }
+
+    public static TimeSpan TimeUntilNextMonth(DateTimeOffset now)
+    {
+        // Работаем по UTC и ждём начало следующего календарного месяца.
+        now = now.ToUniversalTime();
+        var firstDay = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        DateTimeOffset nextMonth = firstDay.AddMonths(1);
+        return nextMonth - now;
     }
 }
