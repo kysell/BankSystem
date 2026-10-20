@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "BankSystem CRUD",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "clients",
+      "item": [
+        {
+          "name": "Create clients",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/clients",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstName\": \"{{$randomFirstName}}\", \"lastName\": \"Student\", \"birthDate\": \"1990-01-01\", \"phoneNumber\": \"+373{{$randomInt}}\", \"passportNumber\": \"P{{$guid}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Create clients', pm.response.code);",
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('clientsId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get clients",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/{{clientsId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Get clients', pm.response.code);",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update clients",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/clients/{{clientsId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstName\": \"Updated\", \"lastName\": \"Student\", \"birthDate\": \"1990-01-01\", \"phoneNumber\": \"+373{{$randomInt}}\", \"passportNumber\": \"P{{$guid}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Update clients', pm.response.code);",
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get updated clients",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/{{clientsId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Get updated clients', pm.response.code);",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Updated name', () => pm.expect(pm.response.json().firstName).to.eql('Updated'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete clients",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/clients/{{clientsId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Delete clients', pm.response.code);",
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get deleted clients",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/{{clientsId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Get deleted clients', pm.response.code);",
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "employees",
+      "item": [
+        {
+          "name": "Create employees",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/employees",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstName\": \"{{$randomFirstName}}\", \"lastName\": \"Student\", \"birthDate\": \"1990-01-01\", \"phoneNumber\": \"+373{{$randomInt}}\", \"passportNumber\": \"P{{$guid}}\", \"position\": \"Developer\", \"salary\": 2000}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Create employees', pm.response.code);",
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('employeesId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get employees",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employees/{{employeesId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Get employees', pm.response.code);",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update employees",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/employees/{{employeesId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstName\": \"Updated\", \"lastName\": \"Student\", \"birthDate\": \"1990-01-01\", \"phoneNumber\": \"+373{{$randomInt}}\", \"passportNumber\": \"P{{$guid}}\", \"position\": \"Developer\", \"salary\": 2000}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Update employees', pm.response.code);",
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get updated employees",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employees/{{employeesId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Get updated employees', pm.response.code);",
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Updated name', () => pm.expect(pm.response.json().firstName).to.eql('Updated'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete employees",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/employees/{{employeesId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Delete employees', pm.response.code);",
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get deleted employees",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employees/{{employeesId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Get deleted employees', pm.response.code);",
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

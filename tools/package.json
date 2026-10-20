@@ -1,0 +1,9 @@
+{
+  "name": "banksystem-demo-checks",
+  "private": true,
+  "description": "Необязательные инструменты проверки Swagger и Postman",
+  "devDependencies": {
+    "newman": "6.2.1",
+    "playwright-core": "1.56.1"
+  }
+}

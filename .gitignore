@@ -1,0 +1,42 @@
+# Результаты сборки и проверок
+**/bin/
+**/obj/
+/artifacts/
+/TestResults/
+*.trx
+*.log
+
+# Локальные настройки IDE и macOS
+.idea/
+.vs/
+*.suo
+*.user
+*.sln.iml
+.DS_Store
+
+# Локальные инструменты и временные файлы
+node_modules/
+.tools/
+*.tmp
+*.bak
+
+# Пароли, токены и личная конфигурация
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Локальные базы и выгрузки
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+/local-data/
+/exports/
