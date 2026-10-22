@@ -1,4 +1,4 @@
-# BankSystem — практика DEX-IT №121
+# BankSystem 
 
 Учебная банковская система на .NET 10: клиенты, сотрудники, счета, фильтры, PostgreSQL/EF Core, CSV/JSON, HTTP-конвертация валют и упражнения C#. Требования сверены с оригинальным PDF №121 из Downloads; источник, страницы и цитаты — в [requirements-audit.md](docs/requirements-audit.md).
 
